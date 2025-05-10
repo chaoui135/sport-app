@@ -1,0 +1,54 @@
+name: fitvista
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  provider: ^6.0.0 # Pour la gestion d'état
+  http: ^1.3.0 # Pour les requêtes HTTP
+  shared_preferences: ^2.0.6 # Pour stocker les données localement
+
+  sqflite: ^2.0.0+4
+  fl_chart: ^0.70.2
+
+  gif: ^2.3.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.1
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+  geolocator: ^13.0.4
+  url_launcher: ^6.2.5
+  gif_view: ^0.4.4
+  cached_network_image: ^3.3.1
+
+
+
+
+
+
+
+
+  timezone: ^0.9.4
+
+  table_calendar: ^3.0.0
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+
