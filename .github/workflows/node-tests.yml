@@ -1,4 +1,4 @@
-name: CI Backend - Fitvisa
+name: CI Backend - Fitvista
 
 on:
   push:
