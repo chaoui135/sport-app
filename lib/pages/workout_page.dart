@@ -438,10 +438,3 @@ class _ExerciseCardWithAddButtonState extends State<ExerciseCardWithAddButton> w
   }
 }
 
-// ... (autres parties de votre code)
-
-
-// ... (autres parties de votre code)
-
-
-
