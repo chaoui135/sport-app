@@ -10,6 +10,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: backend  # <--- C'est ici qu'on dit d'aller dans le dossier backend
+
     steps:
       - name: Récupérer le code du dépôt
         uses: actions/checkout@v3
