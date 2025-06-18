@@ -1,16 +1,36 @@
-# fitvista
+# 🏋️‍♂️ Fullstack Fitness App – Backend & Frontend (Flutter)
 
-A new Flutter project.
+## 📦 Description
 
-## Getting Started
+Application fullstack permettant de gérer :
+- Des utilisateurs
+- Des produits
+- Des paniers
+- Des objectifs de santé et de nutrition
+- Des activités physiques
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## ⚙️ Environnement de développement
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Outils utilisés :
+| Côté Backend       | Côté Frontend (Flutter)         |
+|--------------------|---------------------------------|
+| Node.js / Express  | Dart / Flutter                  |
+| MongoDB (Mongoose) | Flutter SDK                     |
+| Jest (tests)       | `test` package (Dart)           |
+| Postman (API test) | Widgets Flutter                 |
+| Android Studio     | Android Emulator                |
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 🌐 Déploiement
+
+### 🔧 Backend
+
+Déploiement sur plateforme cloud type **Render** ou **Railway** :
+
+1. Cloner le repo :
+   ```bash
+   git clone https://github.com/ton-projet/ton-repo.git
+   cd backend

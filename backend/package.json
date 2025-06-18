@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node ./node_modules/jest/bin/jest.js"
+    "start": "node server.js",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "jest": "^30.0.0",
+    "mongodb-memory-server": "^10.1.4",
     "supertest": "^7.1.1"
   }
 }

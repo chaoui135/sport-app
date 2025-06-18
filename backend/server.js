@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+
 const exercisesRoutes = require('./routes/exercises');
 const usersRoutes = require('./routes/users');
 const activitiesRoutes = require('./routes/activities');
@@ -10,7 +11,7 @@ const cartRoutes = require('./routes/carts');
 const paymentRoutes = require('./routes/payments');
 
 require('dotenv').config();
-//test1
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -22,11 +23,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Connexion à MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sports_exercises', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// Connexion à MongoDB Atlas
+mongoose.connect(process.env.DB_URL)
+  .then(() => {
+    console.log('✅ Connexion à MongoDB Atlas réussie');
+    app.listen(PORT, () => {
+      console.log(`🚀 Serveur démarré sur le port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Erreur de connexion à MongoDB Atlas :', err);
+  });
 
 // Routes
 app.use('/api/exercises', exercisesRoutes);
@@ -35,12 +42,5 @@ app.use('/api/activities', activitiesRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/payment', paymentRoutes);
-
-// Si ce fichier est exécuté directement, on lance le serveur
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Serveur démarré sur le port ${PORT}`);
-  });
-}
 
 module.exports = app;
