@@ -1,8 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
+
+// Import des routes
 const exercisesRoutes = require('./routes/exercises');
 const usersRoutes = require('./routes/users');
 const activitiesRoutes = require('./routes/activities');
@@ -13,20 +14,23 @@ const paymentRoutes = require('./routes/payments');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
+// ✅ Middlewares
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // IMPORTANT pour recevoir le body JSON
+app.use(express.urlencoded({ extended: true }));
+
+// Logger simple
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
 
-// ✅ Route de test/health check (très important pour Render)
+// ✅ Health check route pour Render
 app.get('/', (req, res) => {
   res.status(200).send('🚀 FitVista API is running');
 });
 
-// Connexion à MongoDB
+// ✅ Connexion MongoDB
 mongoose.connect(process.env.DB_URL || 'mongodb://localhost:27017/sports_exercises')
   .then(() => {
     console.log('✅ Connexion à MongoDB réussie');
@@ -38,7 +42,7 @@ mongoose.connect(process.env.DB_URL || 'mongodb://localhost:27017/sports_exercis
     console.error('❌ Connexion MongoDB échouée :', err);
   });
 
-// Routes
+// ✅ Routes API
 app.use('/api/exercises', exercisesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/activities', activitiesRoutes);
