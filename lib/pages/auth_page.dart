@@ -149,8 +149,6 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       _formKey.currentState!.save();
       final url = Uri.parse('${ApiConfig.baseUrl}/api/users/login');
 
-
-
       try {
         final response = await http.post(
           url,
@@ -161,22 +159,28 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           }),
         );
 
+        print('Status: ${response.statusCode}');
+        print('Body: ${response.body}');
+
         if (response.statusCode == 200) {
           _showSnackBar('Connexion réussie !');
-
-          // ✅ Redirige vers la HomePage
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => HomePage()),
           );
         } else {
-          final errorMsg = json.decode(response.body)['message'] ?? 'Erreur de connexion';
-          _showSnackBar(errorMsg);
+          try {
+            final errorMsg = json.decode(response.body)['message'] ?? 'Erreur de connexion';
+            _showSnackBar(errorMsg);
+          } catch (_) {
+            _showSnackBar('Erreur inattendue : ${response.statusCode}');
+          }
         }
       } catch (error) {
         _showSnackBar('Erreur réseau: $error');
       }
     }
   }
+
 
 
   void _showSnackBar(String message) {
