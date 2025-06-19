@@ -1,7 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
-  static const bool isProd = false;
+  static const bool isProd = true;
 
   static String get baseUrl {
     return isProd

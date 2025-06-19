@@ -47,7 +47,8 @@ app.use('/api/payment', paymentRoutes);
 
 // ✅ Route de confirmation pour Render
 app.get('/', (req, res) => {
-  res.send('🚀 API FitVista is running!');
+  res.status(200).send('🚀 FitVista API is running');
 });
+
 
 module.exports = app;
