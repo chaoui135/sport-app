@@ -22,20 +22,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Connexion à MongoDB (Atlas en prod, local sinon)
-mongoose.connect(process.env.DB_URL || 'mongodb://localhost:27017/sports_exercises', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => {
-  console.log('✅ Connexion à MongoDB réussie');
-  app.listen(PORT, () => {
-    console.log(`🚀 Serveur Express sur le port ${PORT}`);
-  });
-})
-.catch(err => {
-  console.error('❌ Connexion MongoDB échouée :', err);
+// ✅ Route de test/health check (très important pour Render)
+app.get('/', (req, res) => {
+  res.status(200).send('🚀 FitVista API is running');
 });
+
+// Connexion à MongoDB
+mongoose.connect(process.env.DB_URL || 'mongodb://localhost:27017/sports_exercises')
+  .then(() => {
+    console.log('✅ Connexion à MongoDB réussie');
+    app.listen(PORT, () => {
+      console.log(`🚀 Serveur Express sur le port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('❌ Connexion MongoDB échouée :', err);
+  });
 
 // Routes
 app.use('/api/exercises', exercisesRoutes);
@@ -44,11 +46,5 @@ app.use('/api/activities', activitiesRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/payment', paymentRoutes);
-
-// ✅ Route de confirmation pour Render
-app.get('/', (req, res) => {
-  res.status(200).send('🚀 FitVista API is running');
-});
-
 
 module.exports = app;
