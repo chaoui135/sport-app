@@ -5,6 +5,20 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 
+
+
+// Route GET pour vérifier les utilisateurs (pour Render ou test)
+router.get('/', async (req, res) => {
+  try {
+    const users = await User.find().select('-password'); // éviter d'envoyer les mots de passe
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
 // Inscription
 router.post('/register', async (req, res) => {
   const { userName, password, fullName } = req.body;
