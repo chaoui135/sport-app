@@ -114,7 +114,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   void _submitAuthForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final url = Uri.parse('http://10.0.2.2:3000/api/users/register');
+      final url = Uri.parse('https://fitness-api.onrender.com/api/users/register');
+
 
       try {
         final response = await http.post(
@@ -143,7 +144,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   void _submitLoginForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final url = Uri.parse('http://10.0.2.2:3000/api/users/login');
+      final url = Uri.parse('https://fitness-api.onrender.com/api/users/login');
+
 
       try {
         final response = await http.post(

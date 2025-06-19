@@ -67,7 +67,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
   Future<void> fetchDatabaseExercises() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3000/api/exercises'),
+          Uri.parse('https://fitness-api.onrender.com/api/exercises')
+
       );
 
       if (response.statusCode == 200) {

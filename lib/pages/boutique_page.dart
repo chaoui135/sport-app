@@ -27,7 +27,8 @@ class _BoutiquePageState extends State<BoutiquePage> {
   }
 
   Future<void> _fetchProducts() async {
-    final res = await http.get(Uri.parse('http://10.0.2.2:3000/api/products'));
+    final res = await http.get(Uri.parse('https://fitness-api.onrender.com/api/products'));
+
     if (res.statusCode == 200) {
       final list = json.decode(res.body) as List;
       setState(() {
