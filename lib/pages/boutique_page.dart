@@ -6,6 +6,8 @@ import 'dart:convert';
 import '../models/cart.dart';
 import '../models/cart_item.dart';
 import '../pages/cart_page.dart';
+import '../services/api_config.dart'; // ajuste le chemin selon le fichier
+
 
 class BoutiquePage extends StatefulWidget {
   @override
@@ -27,7 +29,8 @@ class _BoutiquePageState extends State<BoutiquePage> {
   }
 
   Future<void> _fetchProducts() async {
-    final res = await http.get(Uri.parse('https://fitness-api.onrender.com/api/products'));
+    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/api/products'));
+
 
     if (res.statusCode == 200) {
       final list = json.decode(res.body) as List;

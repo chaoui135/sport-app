@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:gif/gif.dart';
+import '../services/api_config.dart';
 
 
 
@@ -67,7 +68,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
   Future<void> fetchDatabaseExercises() async {
     try {
       final response = await http.get(
-          Uri.parse('https://fitness-api.onrender.com/api/exercises')
+          Uri.parse('${ApiConfig.baseUrl}/api/exercises')
+
 
       );
 

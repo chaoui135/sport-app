@@ -7,6 +7,8 @@ import 'nutrition_page.dart';
 import 'goals_list_page.dart';
 import 'workout_page.dart';
 import 'boutique_page.dart';
+import '../services/api_config.dart'; // adapte le chemin selon ton arborescence
+
 
 
 
@@ -114,7 +116,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   void _submitAuthForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final url = Uri.parse('https://fitness-api.onrender.com/api/users/register');
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/users/register');
+
 
 
       try {
@@ -144,7 +147,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
   void _submitLoginForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final url = Uri.parse('https://fitness-api.onrender.com/api/users/login');
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/users/login');
+
 
 
       try {
