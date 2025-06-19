@@ -1,6 +1,8 @@
 import 'package:fitvista/pages/cart_page.dart';
 import 'package:fitvista/pages/club_search_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -12,9 +14,12 @@ import 'pages/goals_list_page.dart';
 import 'pages/workout_page.dart';
 import 'pages/boutique_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(); // Charge les variables d’environnement
   runApp(FitnessApp());
 }
+
 
 class FitnessApp extends StatelessWidget {
   @override
