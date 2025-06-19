@@ -113,12 +113,53 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
 
   void _toggleObscureText() => setState(() => _obscureText = !_obscureText);
 
+  void _submitLoginForm() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/users/login');
+      print('📡 Tentative de connexion vers : $url');
+
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'userName': _userName,
+            'password': _password,
+          }),
+        );
+
+        print('🔁 Code HTTP: ${response.statusCode}');
+        print('📥 Réponse brute: ${response.body}');
+
+        // Vérifie que c’est bien du JSON
+        if (!response.headers['content-type']!.contains('application/json')) {
+          _showSnackBar('Erreur serveur : réponse non JSON');
+          return;
+        }
+
+        if (response.statusCode == 200) {
+          _showSnackBar('Connexion réussie !');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        } else {
+          final error = json.decode(response.body);
+          _showSnackBar(error['message'] ?? 'Erreur de connexion');
+        }
+      } catch (error) {
+        _showSnackBar('❌ Erreur réseau : $error');
+      }
+    }
+  }
+
   void _submitAuthForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+
       final url = Uri.parse('${ApiConfig.baseUrl}/api/users/register');
-
-
+      print('📡 Inscription vers : $url');
 
       try {
         final response = await http.post(
@@ -131,52 +172,23 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           }),
         );
 
+        print('🔁 Code HTTP: ${response.statusCode}');
+        print('📥 Réponse brute: ${response.body}');
+
+        if (!response.headers['content-type']!.contains('application/json')) {
+          _showSnackBar('Erreur serveur : réponse non JSON');
+          return;
+        }
+
         if (response.statusCode == 201) {
           _showSnackBar('Inscription réussie !');
           setState(() => _isLogin = true);
         } else {
-          final errorMsg = json.decode(response.body)['message'] ?? "Erreur d'inscription";
-          _showSnackBar(errorMsg);
+          final error = json.decode(response.body);
+          _showSnackBar(error['message'] ?? "Erreur d'inscription");
         }
       } catch (error) {
-        _showSnackBar('Erreur de connexion: $error');
-      }
-    }
-  }
-
-  void _submitLoginForm() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      final url = Uri.parse('${ApiConfig.baseUrl}/api/users/login');
-
-      try {
-        final response = await http.post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({
-            'userName': _userName,
-            'password': _password,
-          }),
-        );
-
-        print('Status: ${response.statusCode}');
-        print('Body: ${response.body}');
-
-        if (response.statusCode == 200) {
-          _showSnackBar('Connexion réussie !');
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => HomePage()),
-          );
-        } else {
-          try {
-            final errorMsg = json.decode(response.body)['message'] ?? 'Erreur de connexion';
-            _showSnackBar(errorMsg);
-          } catch (_) {
-            _showSnackBar('Erreur inattendue : ${response.statusCode}');
-          }
-        }
-      } catch (error) {
-        _showSnackBar('Erreur réseau: $error');
+        _showSnackBar('❌ Erreur réseau : $error');
       }
     }
   }

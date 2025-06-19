@@ -16,7 +16,8 @@ import 'pages/boutique_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(); // Charge les variables d’environnement
+  await dotenv.load(fileName: ".env");
+
   runApp(FitnessApp());
 }
 
