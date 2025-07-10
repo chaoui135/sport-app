@@ -28,9 +28,9 @@ Application fullstack permettant de gérer :
 
 ### 🔧 Backend
 
-Déploiement sur plateforme cloud type **Render** ou **Railway** :
+Déploiement sur plateforme cloud type **Render** :
 
 1. Cloner le repo :
    ```bash
-   git clone https://github.com/ton-projet/ton-repo.git
+   git clone https://github.com/chaoui135/sport-app.git
    cd backend

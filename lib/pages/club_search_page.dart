@@ -4,246 +4,168 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 
-class PlaceMapPage extends StatefulWidget {
-  const PlaceMapPage({Key? key}) : super(key: key);
+class ClubSearchPage extends StatefulWidget {
+  const ClubSearchPage({Key? key}) : super(key: key);
 
   @override
-  State<PlaceMapPage> createState() => _PlaceMapPageState();
+  _ClubSearchPageState createState() => _ClubSearchPageState();
 }
 
-class _PlaceMapPageState extends State<PlaceMapPage> {
-  static const LatLng _initialCenter = LatLng(43.2965, 5.3698);
-  final MapController _mapController = MapController();
+class _ClubSearchPageState extends State<ClubSearchPage> {
   final TextEditingController _searchController = TextEditingController();
+  final MapController _mapController = MapController();
 
-  bool _isLoading = false;
-  String? _error;
+  // Bbox pour Marseille (west,north,east,south)
+  // Approximativement 5.316°E → 43.45°N → 5.466°E → 43.30°N
+  final String _viewbox = '5.316,43.45,5.466,43.30';
+
   List<Map<String, dynamic>> _places = [];
+  List<Marker> _markers = [];
+  String _selectedType = 'all';
 
-  String _escapeQuery(String input) {
-    return input.replaceAllMapped(RegExp(r'[\"\\]'), (match) => '\\${match[0]}');
-  }
+  Future<void> _searchPlaces() async {
+    final rawQuery = _searchController.text.trim();
+    if (rawQuery.isEmpty) return;
 
-  Future<void> _searchPlaces(String query) async {
-    final q = query.trim();
-    if (q.isEmpty) {
-      setState(() => _places.clear());
+    // Si on filtre Sport, on ajoute "sport" au texte de recherche
+    final query = _selectedType == 'sport' ? '$rawQuery sport' : rawQuery;
+
+    final uri = Uri.parse('https://nominatim.openstreetmap.org/search')
+        .replace(queryParameters: {
+      'format': 'json',
+      'q': query,
+      'limit': '20',
+      'viewbox': _viewbox,
+      'bounded': '1',
+    });
+
+    final response = await http.get(
+      uri,
+      headers: {'User-Agent': 'Flutter/fitvista'},
+    );
+
+    if (response.statusCode != 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur ${response.statusCode}')),
+      );
       return;
     }
 
+    final List data = json.decode(response.body);
     setState(() {
-      _isLoading = true;
-      _error = null;
+      _places = List<Map<String, dynamic>>.from(data);
+      _markers = _places.map<Marker>((place) {
+        final lat = double.parse(place['lat'] as String);
+        final lon = double.parse(place['lon'] as String);
+        return Marker(
+          width: 50,
+          height: 50,
+          point: LatLng(lat, lon),
+          child: GestureDetector(
+            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(place['display_name'] as String)),
+            ),
+            child: const Icon(Icons.location_on, size: 40, color: Colors.red),
+          ),
+        );
+      }).toList();
     });
 
-    final safeQuery = _escapeQuery(q);
-
-    // ✅ Requête enrichie
-    final overpassQL = '''
-[out:json][timeout:25];
-(
-  node["name"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-  way ["name"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-  relation["name"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-  
-  node["sport"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-  node["leisure"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-  node["amenity"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-  
-  node["brand"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-  node["operator"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-  node["description"~"$safeQuery",i](43.19,5.25,43.38,5.43);
-);
-out center;
-''';
-;
-
-    try {
-      final resp = await http.post(
-        Uri.parse('https://overpass-api.de/api/interpreter'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'data=${Uri.encodeQueryComponent(overpassQL)}',
-      );
-
-      if (resp.statusCode != 200) {
-        throw Exception('Erreur Overpass: ${resp.statusCode}');
-      }
-
-      final data = jsonDecode(resp.body) as Map<String, dynamic>;
-      final elements = (data['elements'] as List).cast<Map<String, dynamic>>();
-
-      final results = elements.map((e) {
-        final isNode = e['type'] == 'node';
-        final lat = isNode ? e['lat'] : e['center']['lat'];
-        final lon = isNode ? e['lon'] : e['center']['lon'];
-        final tags = Map<String, dynamic>.from(e['tags'] ?? {});
-        return {
-          'name': tags['name'] ?? 'Sans nom',
-          'lat': (lat as num).toDouble(),
-          'lon': (lon as num).toDouble(),
-          'tags': tags,
-        };
-      }).toList();
-
-      setState(() {
-        _places = results;
-        _isLoading = false;
-      });
-
-      if (_places.isNotEmpty) {
-        _mapController.move(
-          LatLng(_places.first['lat'], _places.first['lon']),
-          14,
-        );
-        _showResultsPopup();
-      }
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+    if (_markers.isNotEmpty) {
+      _mapController.move(_markers.first.point, 14);
     }
   }
-
-  void _showResultsPopup() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Résultats'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView.builder(
-            itemCount: _places.length,
-            itemBuilder: (_, i) {
-              final p = _places[i];
-              return ListTile(
-                title: Text(p['name']),
-                onTap: () {
-                  Navigator.pop(context);
-                  _mapController.move(
-                    LatLng(p['lat'], p['lon']),
-                    16,
-                  );
-                  _showPlaceDetail(p);
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPlaceDetail(Map<String, dynamic> place) {
-    final tags = place['tags'] as Map<String, dynamic>;
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Text(place['name'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('Coordonnées : ${place['lat'].toStringAsFixed(5)}, ${place['lon'].toStringAsFixed(5)}'),
-            const SizedBox(height: 12),
-            ...tags.entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text('${e.key}: ${e.value}'),
-            )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Marker> _buildMarkers() => _places.map((p) {
-    return Marker(
-      width: 40,
-      height: 40,
-      point: LatLng(p['lat'], p['lon']),
-      child: InkWell(
-        onTap: () => _showPlaceDetail(p),
-        child: const Icon(Icons.location_on, color: Colors.red, size: 36),
-      ),
-    );
-  }).toList();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Carte des clubs - Marseille')),
-      body: Stack(
+      appBar: AppBar(title: const Text('Recherche de clubs à Marseille')),
+      body: Column(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(center: _initialCenter, zoom: 13),
-            children: [
-              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
-              MarkerLayer(markers: _buildMarkers()),
-            ],
-          ),
-          Positioned(
-            top: 10,
-            left: 10,
-            right: 10,
-            child: Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(8),
-              child: TextField(
-                controller: _searchController,
-                textInputAction: TextInputAction.search,
-                onSubmitted: _searchPlaces,
-                decoration: InputDecoration(
-                  hintText: 'Rechercher (club, sport, salle...)',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _isLoading
-                      ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                  )
-                      : IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        _places.clear();
-                        _error = null;
-                        _isLoading = false;
-                      });
-                    },
+          // Barre de recherche + filtre
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      labelText: 'Rechercher',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) => _searchPlaces(),
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-              ),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _selectedType,
+                  items: const [
+                    DropdownMenuItem(value: 'all', child: Text('Tous')),
+                    DropdownMenuItem(value: 'sport', child: Text('Sport')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setState(() => _selectedType = v);
+                  },
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _searchPlaces,
+                  child: const Text('OK'),
+                ),
+              ],
             ),
           ),
-          if (_error != null)
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: Card(
-                color: Colors.red[100],
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text('Erreur: $_error', style: const TextStyle(color: Colors.red)),
+
+          // Carte interactive centrée – Marseille ~ (43.2965, 5.3698)
+          Expanded(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                center: LatLng(43.2965, 5.3698),
+                zoom: 13,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.fitvista',
                 ),
+                RichAttributionWidget(
+                  attributions: [
+                    TextSourceAttribution('OpenStreetMap contributors'),
+                  ],
+                ),
+                MarkerLayer(markers: _markers),
+              ],
+            ),
+          ),
+
+          // Liste des résultats
+          if (_places.isNotEmpty)
+            SizedBox(
+              height: 160,
+              child: ListView.builder(
+                itemCount: _places.length,
+                itemBuilder: (ctx, i) {
+                  final place = _places[i];
+                  return ListTile(
+                    title: Text(
+                      place['display_name'] as String,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text('${place['class']}/${place['type']}'),
+                    onTap: () {
+                      final lat = double.parse(place['lat'] as String);
+                      final lon = double.parse(place['lon'] as String);
+                      _mapController.move(LatLng(lat, lon), 15);
+                    },
+                  );
+                },
               ),
             ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _searchPlaces(_searchController.text),
-        child: const Icon(Icons.search),
       ),
     );
   }

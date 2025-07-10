@@ -1,45 +1,71 @@
-import 'package:fitvista/pages/cart_page.dart';
-import 'package:fitvista/pages/club_search_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
-// Pages principales
 import 'pages/auth_page.dart';
 import 'pages/full_workout_plan_page.dart';
 import 'pages/nutrition_page.dart';
 import 'pages/goals_list_page.dart';
 import 'pages/workout_page.dart';
 import 'pages/boutique_page.dart';
+import 'pages/club_search_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-
   runApp(FitnessApp());
 }
-
 
 class FitnessApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final baseTextTheme = ThemeData.light().textTheme;
+
     return MaterialApp(
       title: 'FitVista',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.light().copyWith(
-        primaryColor: Colors.deepPurple,
-        scaffoldBackgroundColor: Colors.white,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: Colors.indigoAccent,
+        scaffoldBackgroundColor: Color(0xFFF7F8FC),
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.deepPurple,
+          backgroundColor: Colors.white,
+          elevation: 1,
+          foregroundColor: Colors.black87,
+          titleTextStyle: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        textTheme: GoogleFonts.poppinsTextTheme(baseTextTheme).apply(
+          bodyColor: Colors.black87,
+          displayColor: Colors.black87,
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Colors.indigoAccent,
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: false,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.indigoAccent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: EdgeInsets.symmetric(vertical: 14, horizontal: 32),
+          ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.indigoAccent,
           foregroundColor: Colors.white,
         ),
-        colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.deepPurpleAccent),
       ),
       darkTheme: ThemeData.dark(),
       themeMode: ThemeMode.system,
-      home: AuthPage(), // utilise la version stylisée
+      home: AuthPage(),
     );
   }
 }
@@ -63,7 +89,7 @@ class _HomePageState extends State<HomePage> {
       GoalsListPage(),
       WorkoutPage(),
       BoutiquePage(),
-      PlaceMapPage()
+      ClubSearchPage(),
     ];
   }
 
@@ -93,18 +119,16 @@ class _HomePageState extends State<HomePage> {
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Program'),
-          BottomNavigationBarItem(icon: Icon(Icons.fastfood_rounded), label: 'Nutrition'),
-          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'Progress'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Programme'),
+          BottomNavigationBarItem(icon: Icon(Icons.fastfood), label: 'Nutrition'),
+          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'Progression'),
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Workout'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Boutique'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
       ),
     );
   }

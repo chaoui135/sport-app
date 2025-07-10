@@ -1,3 +1,4 @@
+import 'package:fitvista/pages/club_search_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -7,6 +8,7 @@ import 'nutrition_page.dart';
 import 'goals_list_page.dart';
 import 'workout_page.dart';
 import 'boutique_page.dart';
+import 'club_search_page.dart';
 import '../services/api_config.dart'; // adapte le chemin selon ton arborescence
 
 
@@ -31,6 +33,7 @@ class _HomePageState extends State<HomePage> {
       GoalsListPage(),
       WorkoutPage(),
       BoutiquePage(),
+      ClubSearchPage()
     ];
   }
 
@@ -66,6 +69,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'Progress'),
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Workout'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Boutique'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.deepPurple,
