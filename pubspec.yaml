@@ -28,11 +28,13 @@ dependencies:
   geolocator: ^13.0.4
   url_launcher: ^6.2.5
   gif_view: ^0.4.4
+  flutter_typeahead: ^5.0.0
   cached_network_image: ^3.3.1
   google_fonts: ^6.1.0
   timezone: ^0.9.4
   table_calendar: ^3.0.0
   cupertino_icons: ^1.0.8
+  audioplayers: ^5.2.1
 
 dev_dependencies:
   flutter_test:

@@ -6,7 +6,7 @@ import 'dart:convert';
 import '../models/cart.dart';
 import '../models/cart_item.dart';
 import '../pages/cart_page.dart';
-import '../services/api_config.dart'; // ajuste le chemin selon le fichier
+import '../services/api_config.dart';
 
 
 class BoutiquePage extends StatefulWidget {

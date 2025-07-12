@@ -10,6 +10,7 @@ const activitiesRoutes = require('./routes/activities');
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/carts');
 const paymentRoutes = require('./routes/payments');
+const moodsRoutes = require('./routes/moods');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,5 +47,7 @@ app.use('/api/activities', activitiesRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/moods', moodsRoutes);
+
 
 module.exports = app;

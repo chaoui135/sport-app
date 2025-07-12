@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,8 @@ import 'pages/goals_list_page.dart';
 import 'pages/workout_page.dart';
 import 'pages/boutique_page.dart';
 import 'pages/club_search_page.dart';
+import 'pages/mood_music_page.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -90,6 +93,8 @@ class _HomePageState extends State<HomePage> {
       WorkoutPage(),
       BoutiquePage(),
       ClubSearchPage(),
+      MoodMusicPage(),
+
     ];
   }
 
@@ -128,6 +133,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Workout'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Boutique'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+          BottomNavigationBarItem(icon: Icon(Icons.sentiment_satisfied_alt), label: 'MoodMusic'),
         ],
       ),
     );

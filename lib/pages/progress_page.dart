@@ -1,152 +1,288 @@
 // lib/pages/progress_page.dart
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
-import 'package:fitvista/models/goal.dart';
-import 'package:fitvista/models/progress_entry.dart';
 
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+
+import '../models/goal.dart';
+import '../models/progress_entry.dart';
 import 'goal_type.dart';
 
-class ProgressPage extends StatelessWidget {
+class ProgressPage extends StatefulWidget {
   final Goal goal;
-
   const ProgressPage({required this.goal, Key? key}) : super(key: key);
 
-  void _showProgressInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Comment sont calculés vos progrès ?"),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text("Les progrès sont calculés selon l'objectif choisi."),
-                const SizedBox(height: 10),
-                if (goal.type == GoalType.weightLoss)
-                  const Text(
-                      "1. **Perte de poids** : Le graphique montre la perte de poids sur une période. La progression est calculée en fonction de la différence entre le poids cible et le poids actuel."),
-                if (goal.type == GoalType.muscleGain)
-                  const Text(
-                      "2. **Prise de masse** : Le graphique montre l'augmentation de votre poids corporel. La progression est calculée de la même manière."),
-                if (goal.type == GoalType.caloriesBurned)
-                  const Text(
-                      "3. **Calories brûlées** : Le graphique suit le nombre de calories brûlées, en fonction de votre activité."),
-                if (goal.type == GoalType.custom)
-                  const Text(
-                      "4. **Objectif personnalisé** : Vous pouvez suivre toute autre donnée, comme les pas effectués ou les minutes d'exercice."),
-                const SizedBox(height: 10),
-                const Text(
-                    "Les pourcentages sont calculés en divisant la progression actuelle par l'objectif total. Le graphique montre l'évolution au fil du temps."),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+  @override
+  State<ProgressPage> createState() => _ProgressPageState();
+}
+
+class _ProgressPageState extends State<ProgressPage> {
+  final TextEditingController _valueController = TextEditingController();
+
+  /// Enregistre une nouvelle mesure horodatée.
+  void _saveTodayValue() {
+    final v = double.tryParse(_valueController.text);
+    if (v == null) return;
+    final now = DateTime.now();
+    setState(() {
+      widget.goal.dailyProgress[now] = ProgressEntry(date: now, value: v);
+    });
+    _valueController.clear();
   }
 
   @override
   Widget build(BuildContext context) {
-    double percentage = goal.percentage;
+    final goal      = widget.goal;
+    final pct       = (goal.percentage * 100).clamp(0.0, 100.0);
+    final unit      = goal.type == GoalType.caloriesBurned ? ' kcal' : ' kg';
+    final mainColor = Theme.of(context).primaryColor;
 
-    // Extraire les données de progression
-    List<double> progressValues = goal.dailyProgress.entries
-        .map((entry) => entry.value.value) // Extraire les valeurs des ProgressEntry
-        .toList();
+    // 1) Tri et extraction des entrées
+    final entries = goal.dailyProgress.values.toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
 
-    // Créer les groupes de barres pour le graphique
-    final barGroups = List.generate(progressValues.length, (i) {
-      return BarChartGroupData(
+    // 2) Calcul du max pour l'échelle (évite un maxY à 0)
+    final rawMax = entries.isNotEmpty
+        ? entries.map((e) => e.value).reduce(max)
+        : 1.0;
+    final maxVal = (rawMax > 0 ? rawMax : 1.0) * 1.2;
+
+    // 3) Création des barGroups
+    final barGroups = List<BarChartGroupData>.generate(
+      entries.length,
+          (i) => BarChartGroupData(
         x: i,
+        barsSpace: 8,
         barRods: [
           BarChartRodData(
-            toY: progressValues[i], // Utiliser directement la valeur ici
-            color: Colors.green,
-            width: 18,
+            toY: entries[i].value,
+            width: 20,
             borderRadius: BorderRadius.circular(6),
-          ),
-        ],
-      );
-    }).toList();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(goal.title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showProgressInfo(context),
+            color: mainColor,
           ),
         ],
       ),
-      body: Padding(
+    );
+
+    // 4) Détermination du pas d'affichage des labels X
+    final int maxLabels = 6;
+    final int labelStep = entries.isEmpty
+        ? 1
+        : max(1, (entries.length / maxLabels).ceil());
+
+    // 5) Intervalle de grille Y, non nul
+    double gridInterval = maxVal / 4;
+    if (gridInterval == 0) gridInterval = 1;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Suivi : ${goal.title}'),
+        backgroundColor: mainColor,
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  goal.title,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                LinearProgressIndicator(
-                  value: percentage,
-                  minHeight: 12,
-                  backgroundColor: Colors.grey.shade300,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-                ),
-                const SizedBox(height: 8),
-                Text("${(percentage * 100).toStringAsFixed(1)}% atteint"),
-                const SizedBox(height: 20),
-                SizedBox(
-                  height: 200,
-                  child: BarChart(
-                    BarChartData(
-                      barGroups: barGroups,
-                      borderData: FlBorderData(show: false),
-                      titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(
-                          axisNameWidget: Text('Progression'),
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, _) {
-                              return Text(
-                                "${value.toStringAsFixed(0)}${goal.type == GoalType.caloriesBurned ? " cal" : " kg"}",
-                                style: TextStyle(fontSize: 10),
-                              );
-                            },
-                          ),
-                        ),
-                        bottomTitles: AxisTitles(
-                          axisNameWidget: Text('Jour'),
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, _) {
-                              return Text("J${value.toInt() + 1}");
-                            },
-                          ),
+        child: Column(
+          children: [
+            // ─── Camembert de progression générale ─────────────────────────
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Progression générale',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 120,
+                      child: PieChart(
+                        PieChartData(
+                          sectionsSpace: 4,
+                          centerSpaceRadius: 16,
+                          startDegreeOffset: -90,
+                          sections: [
+                            PieChartSectionData(
+                              value: pct,
+                              color: mainColor,
+                              title: '${pct.toStringAsFixed(1)} %',
+                              radius: 50,
+                              titleStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            PieChartSectionData(
+                              value: 100 - pct,
+                              color: Colors.grey.shade200,
+                              title: '',
+                              radius: 50,
+                            ),
+                          ],
                         ),
                       ),
-                      gridData: FlGridData(show: true),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ─── Graphique en barres (évolution quotidienne) ───────────────
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Évolution quotidienne',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (barGroups.isNotEmpty)
+                      SizedBox(
+                        height: 300,
+                        child: BarChart(
+                          BarChartData(
+                            maxY: maxVal,
+                            barGroups: barGroups,
+                            gridData: FlGridData(
+                              show: true,
+                              drawHorizontalLine: true,
+                              horizontalInterval: gridInterval,
+                              getDrawingHorizontalLine: (value) => FlLine(
+                                color: Colors.grey.shade300,
+                                strokeWidth: 1,
+                              ),
+                              drawVerticalLine: false,
+                            ),
+                            borderData: FlBorderData(show: false),
+                            titlesData: FlTitlesData(
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 50,
+                                  getTitlesWidget: (x, meta) {
+                                    final idx = x.toInt();
+                                    // on n'affiche qu'un label sur [labelStep]
+                                    if (idx % labelStep != 0) return const SizedBox();
+                                    final d = entries[idx].date;
+                                    // si plusieurs points dans le même jour, on ajoute l'heure
+                                    final sameDayCount = entries
+                                        .where((e) =>
+                                    e.date.year == d.year &&
+                                        e.date.month == d.month &&
+                                        e.date.day == d.day)
+                                        .length;
+                                    final fmt = sameDayCount > 1
+                                        ? DateFormat('dd/MM HH:mm')
+                                        : DateFormat('dd/MM');
+                                    return Transform.rotate(
+                                      angle: -pi / 4,
+                                      child: Text(
+                                        fmt.format(d),
+                                        style: const TextStyle(fontSize: 10),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 40,
+                                  interval: gridInterval,
+                                  getTitlesWidget: (v, meta) => Text(
+                                    '${v.toStringAsFixed(0)}$unit',
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                                ),
+                              ),
+                              topTitles: AxisTitles(),
+                              rightTitles: AxisTitles(),
+                            ),
+                            barTouchData: BarTouchData(
+                              enabled: true,
+                              touchTooltipData: BarTouchTooltipData(
+                                // simple tooltip sans paramètres obsolètes
+                                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                  final val = entries[group.x.toInt()].value;
+                                  return BarTooltipItem(
+                                    '${val.toStringAsFixed(1)}$unit',
+                                    const TextStyle(color: Colors.white),
+                                  );
+                                },
+                                fitInsideHorizontally: true,
+                                fitInsideVertically: true,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(
+                        height: 150,
+                        child: Center(child: Text('Aucune donnée')),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ─── Saisie d'une nouvelle mesure ───────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _valueController,
+                    keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Valeur du jour ($unit)',
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: _saveTodayValue,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: mainColor,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Enregistrer'),
+                ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );

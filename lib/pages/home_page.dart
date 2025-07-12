@@ -1,4 +1,5 @@
 import 'package:fitvista/pages/club_search_page.dart';
+import 'package:fitvista/pages/mood_music_page.dart';
 import 'package:flutter/material.dart';
 import 'full_workout_plan_page.dart';
 import 'nutrition_page.dart';
@@ -29,6 +30,7 @@ class _HomePageState extends State<HomePage> {
       WorkoutPage(),
       BoutiquePage(),
       ClubSearchPage(),
+      MoodMusicPage(),
     ];
   }
 
@@ -65,6 +67,8 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Workout'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Boutique'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+
+          BottomNavigationBarItem(icon: Icon(Icons.music_note), label: 'MoodMusic'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.deepPurple,
