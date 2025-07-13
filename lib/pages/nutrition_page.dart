@@ -1,26 +1,28 @@
-// lib/pages/nutrition_page.dart
-
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+// ---- Service API Spoonacular ----
 class NutritionService {
   final String apiKey = '91f7622b5e59422fb84b2b29c6d0281f';
 
-  Future<List<dynamic>> fetchHealthyRecipes({
-    int maxCalories = 500,
-    int number = 10,
+  Future<List<dynamic>> fetchRecipes({
+    int maxCalories = 600,
+    int number = 8,
+    String diet = '',
   }) async {
+    final params = {
+      'number': '$number',
+      'apiKey': apiKey,
+      'addRecipeNutrition': 'true',
+      'maxCalories': '$maxCalories'
+    };
+    if (diet.isNotEmpty && diet != 'all') params['diet'] = diet;
+
     final uri = Uri.https(
       'api.spoonacular.com',
       '/recipes/complexSearch',
-      {
-        'diet': 'healthy',
-        'maxCalories': '$maxCalories',
-        'number': '$number',
-        'apiKey': apiKey,
-      },
+      params,
     );
     final resp = await http.get(uri);
     if (resp.statusCode == 200) {
@@ -46,45 +48,69 @@ class NutritionService {
   }
 }
 
+// ---- Page Nutrition ----
 class NutritionPage extends StatefulWidget {
-  const NutritionPage({Key? key}) : super(key: key);
-
   @override
   _NutritionPageState createState() => _NutritionPageState();
 }
 
 class _NutritionPageState extends State<NutritionPage> {
-  // controllers IMC
-  final _weightCtl       = TextEditingController();
-  final _heightCtl       = TextEditingController();
-  final _ageCtl          = TextEditingController();
-  final _activityCtl     = TextEditingController();
-  final _goalWeightCtl   = TextEditingController();
-  final _goalActivityCtl = TextEditingController();
-
+  // IMC & besoins
+  final _weightCtl = TextEditingController();
+  final _heightCtl = TextEditingController();
+  final _ageCtl = TextEditingController();
+  final _activityCtl = TextEditingController();
   double? _bmi;
   double? _calNeeds;
 
-  // recettes
-  final _maxCalCtl = TextEditingController();
-  bool _loading    = true;
+  // Recettes
+  final _service = NutritionService();
+  final _maxCalCtl = TextEditingController(text: "600");
+  String _selectedDiet = 'all';
+  bool _loading = true;
   List<dynamic> _recipes = [];
   List<Map<String, dynamic>> _journal = [];
-  Timer? _timer;
-  final _service = NutritionService();
+  final _customNameCtl = TextEditingController();
+  final _customCalCtl = TextEditingController();
+  final _customProtCtl = TextEditingController();
+  final _customFatCtl = TextEditingController();
+  final _customCarbCtl = TextEditingController();
+
+  final List<Map<String, String>> diets = [
+    {'label': 'Tous', 'value': 'all'},
+    {'label': 'Healthy', 'value': 'healthy'},
+    {'label': 'Végétarien', 'value': 'vegetarian'},
+    {'label': 'Vegan', 'value': 'vegan'},
+    {'label': 'Sans Gluten', 'value': 'gluten free'},
+    {'label': 'Low Carb', 'value': 'low carb'},
+  ];
+
+  // Suggestions produits
+  final List<Map<String, String>> supplements = [
+    {'name': "Whey protéine", 'desc': "Complément riche en protéines"},
+    {'name': "BCAA", 'desc': "Acides aminés essentiels"},
+    {'name': "Oméga 3", 'desc': "Bon pour le cœur et le cerveau"},
+    {'name': "Barre protéinée", 'desc': "Snack rapide, riche en protéines"},
+    {'name': "Vitamines D", 'desc': "Pour l’immunité et l’ossature"},
+    {'name': "Magnésium", 'desc': "Réduit la fatigue"},
+    {'name': "Pré-workout", 'desc': "Booste l’énergie avant séance"},
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadRecipes();
-    // rafraîchir chaque jour
-    _timer = Timer.periodic(const Duration(days: 1), (_) => _loadRecipes());
   }
 
-  Future<void> _loadRecipes({int maxCal = 500}) async {
+  Future<void> _loadRecipes() async {
     setState(() => _loading = true);
+    final maxCal = int.tryParse(_maxCalCtl.text) ?? 600;
+    final diet = _selectedDiet == 'all' ? '' : _selectedDiet;
     try {
-      final list = await _service.fetchHealthyRecipes(maxCalories: maxCal);
+      final list = await _service.fetchRecipes(
+        maxCalories: maxCal,
+        diet: diet,
+      );
       setState(() => _recipes = list);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -96,166 +122,247 @@ class _NutritionPageState extends State<NutritionPage> {
   }
 
   void _calculate() {
-    final w   = double.tryParse(_weightCtl.text);
-    final h   = double.tryParse(_heightCtl.text);
-    final a   = int.tryParse(_ageCtl.text);
+    final w = double.tryParse(_weightCtl.text);
+    final h = double.tryParse(_heightCtl.text);
+    final a = int.tryParse(_ageCtl.text);
     final act = double.tryParse(_activityCtl.text);
     if (w != null && h != null && a != null && act != null && h > 0) {
-      final bmi = w / ((h/100)*(h/100));
-      final bmr = 10*w + 6.25*h - 5*a + 5;
+      final bmi = w / ((h / 100) * (h / 100));
+      final bmr = 10 * w + 6.25 * h - 5 * a + 5;
       setState(() {
-        _bmi     = bmi;
+        _bmi = bmi;
         _calNeeds = bmr * act;
       });
     }
   }
 
-  void _addToJournal(Map<String, dynamic> d) {
-    final nutrients = d['nutrition']['nutrients'] as List;
-    final cal  = nutrients.firstWhere((n) => n['name']=='Calories')['amount'] as num;
-    final prot = nutrients.firstWhere((n) => n['name']=='Protein' )['amount'] as num;
-    final fat  = nutrients.firstWhere((n) => n['name']=='Fat'     )['amount'] as num;
-    final carb = nutrients.firstWhere((n) => n['name']=='Carbohydrates')['amount'] as num;
+  void _addToJournal(Map<String, dynamic> recipe) {
+    final nutr = recipe['nutrition']?['nutrients'] ?? [];
+    double cal = 0, prot = 0, fat = 0, carb = 0;
+    for (var n in nutr) {
+      if (n['name'] == 'Calories') cal = n['amount']?.toDouble() ?? 0;
+      if (n['name'] == 'Protein') prot = n['amount']?.toDouble() ?? 0;
+      if (n['name'] == 'Fat') fat = n['amount']?.toDouble() ?? 0;
+      if (n['name'] == 'Carbohydrates') carb = n['amount']?.toDouble() ?? 0;
+    }
     setState(() {
       _journal.add({
-        'title': d['title'],
-        'cal': cal.toDouble(),
-        'prot': prot.toDouble(),
-        'fat': fat.toDouble(),
-        'carb': carb.toDouble(),
+        'title': recipe['title'] as String,
+        'cal': cal,
+        'prot': prot,
+        'fat': fat,
+        'carb': carb,
+        'img': recipe['image'] ?? '',
       });
     });
   }
 
-  Map<String,double> get _totals {
-    double c=0,p=0,f=0,cb=0;
+  void _addCustomToJournal() {
+    final title = _customNameCtl.text.trim();
+    final cal = double.tryParse(_customCalCtl.text) ?? 0;
+    final prot = double.tryParse(_customProtCtl.text) ?? 0;
+    final fat = double.tryParse(_customFatCtl.text) ?? 0;
+    final carb = double.tryParse(_customCarbCtl.text) ?? 0;
+    if (title.isNotEmpty) {
+      setState(() {
+        _journal.add({
+          'title': title,
+          'cal': cal,
+          'prot': prot,
+          'fat': fat,
+          'carb': carb,
+          'img': '',
+        });
+      });
+      _customNameCtl.clear();
+      _customCalCtl.clear();
+      _customProtCtl.clear();
+      _customFatCtl.clear();
+      _customCarbCtl.clear();
+      Navigator.pop(context);
+    }
+  }
+
+  Map<String, double> get _totals {
+    double c = 0, p = 0, f = 0, cb = 0;
     for (var e in _journal) {
-      c+=e['cal']; p+=e['prot']; f+=e['fat']; cb+=e['carb'];
+      c += e['cal'] ?? 0;
+      p += e['prot'] ?? 0;
+      f += e['fat'] ?? 0;
+      cb += e['carb'] ?? 0;
     }
-    return {'cal':c,'prot':p,'fat':f,'carb':cb};
+    return {'cal': c, 'prot': p, 'fat': f, 'carb': cb};
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    for (final ctl in [
-      _weightCtl,_heightCtl,_ageCtl,_activityCtl,
-      _goalWeightCtl,_goalActivityCtl,_maxCalCtl
-    ]) {
-      ctl.dispose();
-    }
-    super.dispose();
-  }
-
-  void _showJournal() {
-    final t = _totals;
-    showDialog(
+  void _showRecipeDetail(dynamic recipe) async {
+    final details = await _service.fetchRecipeDetails(recipe['id']);
+    showModalBottomSheet(
       context: context,
-      builder: (ctx)=> AlertDialog(
-        title: const Text('Journal Alimentaire'),
-        content: SingleChildScrollView(
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        builder: (_, ctl) => SingleChildScrollView(
+          controller: ctl,
+          padding: EdgeInsets.all(18),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DataTable(
-                columns: const [
-                  DataColumn(label: Text('Aliment')),
-                  DataColumn(label: Text('Cal')),
-                  DataColumn(label: Text('P')),
-                  DataColumn(label: Text('L')),
-                  DataColumn(label: Text('G')),
-                ],
-                rows: _journal.map((e){
-                  return DataRow(cells:[
-                    DataCell(Text(e['title'], overflow: TextOverflow.ellipsis)),
-                    DataCell(Text(e['cal'].toStringAsFixed(1))),
-                    DataCell(Text(e['prot'].toStringAsFixed(1))),
-                    DataCell(Text(e['fat'].toStringAsFixed(1))),
-                    DataCell(Text(e['carb'].toStringAsFixed(1))),
-                  ]);
-                }).toList(),
+              if (details['image'] != null)
+                Center(child: Image.network(details['image'], height: 160)),
+              SizedBox(height: 12),
+              Text(details['title'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              SizedBox(height: 8),
+              Text(
+                (details['summary'] as String?)?.replaceAll(RegExp(r'<[^>]*>'), '') ?? '',
+                style: TextStyle(fontSize: 15, color: Colors.grey[800]),
               ),
-              const SizedBox(height: 12),
-              Text('Totaux :',
-                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              Text('Calories : ${t['cal']!.toStringAsFixed(1)}'),
-              Text('Protéines : ${t['prot']!.toStringAsFixed(1)} g'),
-              Text('Lipides : ${t['fat']!.toStringAsFixed(1)} g'),
-              Text('Glucides : ${t['carb']!.toStringAsFixed(1)} g'),
+              SizedBox(height: 18),
+              Text("Calories : ${details['nutrition']['nutrients']?.firstWhere((n) => n['name']=='Calories', orElse: () => {'amount': 0})['amount'] ?? '?'} kcal"),
+              Text("Protéines : ${details['nutrition']['nutrients']?.firstWhere((n) => n['name']=='Protein', orElse: () => {'amount': 0})['amount'] ?? '?'} g"),
+              Text("Glucides : ${details['nutrition']['nutrients']?.firstWhere((n) => n['name']=='Carbohydrates', orElse: () => {'amount': 0})['amount'] ?? '?'} g"),
+              Text("Lipides : ${details['nutrition']['nutrients']?.firstWhere((n) => n['name']=='Fat', orElse: () => {'amount': 0})['amount'] ?? '?'} g"),
+              SizedBox(height: 16),
+              Center(
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.add_circle_outline),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal[700], foregroundColor: Colors.white),
+                  label: Text('Ajouter au journal'),
+                  onPressed: () {
+                    _addToJournal(details);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(onPressed: ()=>Navigator.pop(ctx), child: const Text('Fermer')),
-        ],
       ),
     );
   }
 
-  void _showActivityInfo() {
+  void _showJournal() {
+    final t = _totals;
     showModalBottomSheet(
       context: context,
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16))
-        ),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(18.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Niveaux d’activité', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            ...[
-              ['1.2','Sédentaire'],
-              ['1.375','Légèrement actif'],
-              ['1.55','Modérément actif'],
-              ['1.725','Très actif'],
-              ['1.9','Extrêmement actif'],
-            ].map((row)=> Padding(
-              padding: const EdgeInsets.symmetric(vertical:4),
-              child: Row(
-                children: [
-                  Text(row[0], style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(width:12),
-                  Text(row[1]),
-                ],
+            Text('Journal Alimentaire', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19)),
+            SizedBox(height: 12),
+            SizedBox(
+              height: 200,
+              child: ListView.builder(
+                itemCount: _journal.length,
+                itemBuilder: (_, i) {
+                  final e = _journal[i];
+                  return ListTile(
+                    leading: (e['img'] ?? '').isNotEmpty
+                        ? ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(e['img'], width: 42, height: 42, fit: BoxFit.cover))
+                        : null,
+                    title: Text(e['title'], maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      "Kcal: ${e['cal']?.toStringAsFixed(0)}, P: ${e['prot']?.toStringAsFixed(1)}, G: ${e['carb']?.toStringAsFixed(1)}, L: ${e['fat']?.toStringAsFixed(1)}",
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red[300]),
+                      onPressed: () {
+                        setState(() => _journal.removeAt(i));
+                        Navigator.pop(context);
+                        _showJournal();
+                      },
+                    ),
+                  );
+                },
               ),
-            )),
-            Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(onPressed: ()=>Navigator.pop(context), child: const Text('Fermer'))
-            )
+            ),
+            Divider(height: 20),
+            Text("Total :  ${t['cal']!.toStringAsFixed(0)} kcal | ${t['prot']!.toStringAsFixed(1)}P / ${t['carb']!.toStringAsFixed(1)}G / ${t['fat']!.toStringAsFixed(1)}L"),
+            SizedBox(height: 8),
+            ElevatedButton.icon(
+              icon: Icon(Icons.add),
+              label: Text("Ajouter manuel (repas/supplément)"),
+              onPressed: () {
+                _showAddCustom();
+              },
+            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('Fermer')),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildField(String label, TextEditingController ctl){
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical:6),
-      child: TextField(
-        controller: ctl,
-        keyboardType: TextInputType.numberWithOptions(decimal:true),
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+  void _showAddCustom() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("Ajout manuel"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: _customNameCtl, decoration: InputDecoration(labelText: "Nom du repas/supplément")),
+              TextField(controller: _customCalCtl, decoration: InputDecoration(labelText: "Calories"), keyboardType: TextInputType.number),
+              TextField(controller: _customProtCtl, decoration: InputDecoration(labelText: "Protéines (g)"), keyboardType: TextInputType.number),
+              TextField(controller: _customCarbCtl, decoration: InputDecoration(labelText: "Glucides (g)"), keyboardType: TextInputType.number),
+              TextField(controller: _customFatCtl, decoration: InputDecoration(labelText: "Lipides (g)"), keyboardType: TextInputType.number),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text("Annuler")),
+          ElevatedButton(onPressed: _addCustomToJournal, child: Text("Ajouter"))
+        ],
+      ),
+    );
+  }
+
+  void _showSupplements() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Suggestions de produits/suppléments', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19)),
+            SizedBox(height: 16),
+            ...supplements.map((s) => ListTile(
+              leading: Icon(Icons.local_offer, color: Colors.teal[800]),
+              title: Text(s['name']!),
+              subtitle: Text(s['desc']!),
+            )),
+            SizedBox(height: 6),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('Fermer')),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildCard(String title, List<Widget> children){
+  Widget _buildCard(String title, List<Widget> children) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical:8),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height:8),
+          const SizedBox(height: 8),
           ...children
         ]),
       ),
@@ -264,101 +371,138 @@ class _NutritionPageState extends State<NutritionPage> {
 
   @override
   Widget build(BuildContext ctx) {
-    final theme = Theme.of(ctx);
-    final primary = theme.primaryColor;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nutrition & Santé'),
         actions: [
-          IconButton(icon: const Icon(Icons.list_alt), onPressed: _showJournal),
-          IconButton(icon: const Icon(Icons.info_outline), onPressed: _showActivityInfo),
+          IconButton(icon: Icon(Icons.food_bank), onPressed: _showJournal),
+          IconButton(icon: Icon(Icons.local_offer), onPressed: _showSupplements)
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal:16, vertical:12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children:[
+            children: [
               // IMC & besoins
               _buildCard('Calcul IMC & Besoins', [
-                _buildField('Poids (kg)', _weightCtl),
-                _buildField('Taille (cm)', _heightCtl),
-                _buildField('Âge (ans)', _ageCtl),
-                _buildField('Niveau activité (1.2–1.9)', _activityCtl),
-                const SizedBox(height:12),
+                TextField(controller: _weightCtl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Poids (kg)')),
+                SizedBox(height: 5),
+                TextField(controller: _heightCtl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Taille (cm)')),
+                SizedBox(height: 5),
+                TextField(controller: _ageCtl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Âge (ans)')),
+                SizedBox(height: 5),
+                TextField(controller: _activityCtl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Niveau activité (1.2–1.9)')),
+                SizedBox(height: 12),
                 Center(
                   child: ElevatedButton(
                     onPressed: _calculate,
-                    style: ElevatedButton.styleFrom(backgroundColor: primary),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
                     child: const Text('CALCULER'),
                   ),
                 ),
-                if (_bmi != null)   Text('IMC : ${_bmi!.toStringAsFixed(2)}'),
+                if (_bmi != null) Text('IMC : ${_bmi!.toStringAsFixed(2)}'),
                 if (_calNeeds != null) Text('Besoins cal/j : ${_calNeeds!.toStringAsFixed(0)}'),
               ]),
 
-              // Recettes
+              // Recherche recettes + filtres
               _buildCard('Recettes Santé', [
-                TextField(
-                  controller: _maxCalCtl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Max calories',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onSubmitted: (v){
-                    final m = int.tryParse(v) ?? 500;
-                    _loadRecipes(maxCal: m);
-                  },
-                ),
-                const SizedBox(height:8),
-                if (_loading)
-                  Center(child: CircularProgressIndicator(color: primary))
-                else ..._recipes.map((r)=> Card(
-                  elevation:1,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  margin: const EdgeInsets.symmetric(vertical:4),
-                  child: ListTile(
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.network(
-                          'https://spoonacular.com/recipeImages/${r['id']}-240x150.jpg',
-                          width: 60, height:60, fit: BoxFit.cover,
-                          errorBuilder:(_,__,___)=>const Icon(Icons.broken_image)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _maxCalCtl,
+                        decoration: InputDecoration(
+                          labelText: "Calories max",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onSubmitted: (_) => _loadRecipes(),
                       ),
                     ),
-                    title: Text(r['title'], maxLines:1, overflow: TextOverflow.ellipsis),
-                    trailing: IconButton(
-                      icon: Icon(Icons.add_circle, color: primary),
-                      onPressed: () async {
-                        final d = await _service.fetchRecipeDetails(r['id']);
-                        _addToJournal(d);
+                    SizedBox(width: 10),
+                    DropdownButton<String>(
+                      value: _selectedDiet,
+                      items: diets
+                          .map((d) => DropdownMenuItem<String>(
+                        value: d['value'] as String,
+                        child: Text(d['label'] as String),
+                      ))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          setState(() => _selectedDiet = v);
+                          _loadRecipes();
+                        }
                       },
+                      underline: SizedBox(),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    onTap: () async {
-                      final d = await _service.fetchRecipeDetails(r['id']);
-                      showDialog(
-                        context: ctx,
-                        builder: (_) => AlertDialog(
-                          title: Text(d['title']),
-                          content: SingleChildScrollView(
-                            child: Column(children:[
-                              Image.network(d['image']),
-                              const SizedBox(height:12),
-                              Text(d['summary'], style: theme.textTheme.bodyMedium)
-                            ]),
-                          ),
-                          actions:[
-                            TextButton(onPressed: ()=>Navigator.pop(ctx), child: const Text('Fermer'))
+                    SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(Icons.refresh),
+                      tooltip: "Actualiser",
+                      onPressed: _loadRecipes,
+                    )
+                  ],
+                ),
+                SizedBox(height: 10),
+                _loading
+                    ? Center(child: CircularProgressIndicator(color: Colors.teal))
+                    : ListView.separated(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: _recipes.length,
+                  separatorBuilder: (_, __) => SizedBox(height: 9),
+                  itemBuilder: (_, i) {
+                    final r = _recipes[i];
+                    return Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(7),
+                          child: Image.network(
+                              r['image'] ?? '',
+                              width: 54, height: 54, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Icon(Icons.broken_image, size: 32)),
+                        ),
+                        title: Text(r['title'], maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle: Text(
+                          "Kcal: ${r['nutrition']?['nutrients']?.firstWhere((n) => n['name']=='Calories', orElse: ()=>{'amount': 0})['amount'] ?? '?'}",
+                          style: TextStyle(color: Colors.teal[700], fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.info_outline, color: Colors.teal[800]),
+                              tooltip: "Voir détails",
+                              onPressed: () => _showRecipeDetail(r),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.add_circle, color: Colors.teal[700]),
+                              tooltip: "Ajouter au journal",
+                              onPressed: () async {
+                                final details = await _service.fetchRecipeDetails(r['id']);
+                                _addToJournal(details);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Ajouté au journal !'),
+                                    backgroundColor: Colors.teal,
+                                    duration: Duration(milliseconds: 900),
+                                  ),
+                                );
+                              },
+                            ),
                           ],
                         ),
-                      );
-                    },
-                  ),
-                )).toList(),
+                      ),
+                    );
+                  },
+                ),
               ]),
             ],
           ),

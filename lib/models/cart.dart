@@ -7,7 +7,7 @@ class Cart {
   void addItem(CartItem item) {
     final existingItemIndex = items.indexWhere((cartItem) => cartItem.id == item.id);
     if (existingItemIndex >= 0) {
-      items[existingItemIndex].quantity += 1; // Augmente la quantité
+      items[existingItemIndex].quantity += 1;
     } else {
       items.add(item);
     }

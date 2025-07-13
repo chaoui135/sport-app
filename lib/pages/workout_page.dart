@@ -1,38 +1,37 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:gif/gif.dart';
 import '../services/api_config.dart';
 
 class WorkoutPage extends StatefulWidget {
   @override
-  _WorkoutPageState createState() => _WorkoutPageState();
+  State<WorkoutPage> createState() => _WorkoutPageState();
 }
 
 class _WorkoutPageState extends State<WorkoutPage> {
-  List<Map<String, dynamic>> allExercises = [];
-  String searchQuery = '';
-  List<String> sportsSuggestions = [];
-  List<String> sportsList = [
+  List<Map<String, dynamic>> _all = [];
+  List<Map<String, dynamic>> _filtered = [];
+  List<Map<String, dynamic>> _selected = [];
+  String _search = '';
+  final List<String> _sportsList = [
     'Yoga', 'Musculation', 'Cardio', 'Pilates', 'CrossFit',
     'Cyclisme', 'Natation', 'Lutte', 'Judo', 'MMA',
     'Boxe', 'Tennis', 'Foot', 'Course'
   ];
-  List<Map<String, dynamic>> selectedExercises = [];
+  final Set<String> _filters = {};
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchExercises();
+    _fetchAllExercises();
   }
 
-  Future<void> fetchExercises() async {
-    await fetchApiExercises();
-    await fetchDatabaseExercises();
-    setState(() {}); // rafraîchir après le chargement
-  }
+  Future<void> _fetchAllExercises() async {
+    setState(() => _loading = true);
+    List<Map<String, dynamic>> temp = [];
 
-  Future<void> fetchApiExercises() async {
+    // 1. API externe
     final muscleGroups = [
       'abdominals', 'abductors', 'adductors', 'biceps', 'calves',
       'chest', 'forearms', 'glutes', 'hamstrings', 'lats',
@@ -44,129 +43,170 @@ class _WorkoutPageState extends State<WorkoutPage> {
         headers: {'X-Api-Key': 'GOpjaCbMBYCQfaFfm/hIzg==WSeS3AaOyVvYnbQV'},
       );
       if (resp.statusCode == 200) {
-        final data = json.decode(resp.body) as List;
-        allExercises.addAll(data.map((e) => {
-          'name': e['name'],
-          'type': e['type'],
-          'muscle': e['muscle'],
-          'equipment': e['equipment'],
-          'difficulty': e['difficulty'],
-          'instructions': e['instructions'],
+        final List data = json.decode(resp.body);
+        temp.addAll(data.map<Map<String, dynamic>>((e) => {
+          'name': (e['name'] ?? '').toString(),
+          'type': (e['type'] ?? '').toString(),
+          'muscle': (e['muscle'] ?? '').toString(),
+          'equipment': (e['equipment'] ?? '').toString(),
+          'difficulty': (e['difficulty'] ?? '').toString(),
+          'description': (e['instructions'] ?? '').toString(),
+          'gifFileName': null,
           'source': 'api',
         }));
       }
     }
-  }
 
-  Future<void> fetchDatabaseExercises() async {
+    // 2. MongoDB Atlas (API Render)
     try {
-      final resp = await http.get(
-          Uri.parse('${ApiConfig.baseUrl}/api/exercises'));
+      final resp = await http.get(Uri.parse('${ApiConfig.baseUrl}/api/exercises'));
       if (resp.statusCode == 200) {
-        final data = json.decode(resp.body) as List;
-        allExercises.addAll(data.map((item) => {
-          'name': item['name'] ?? 'N/A',
-          'type': item['type'] ?? 'N/A',
-          'duration': item['duration'] ?? 'N/A',
-          'description': item['description'] ?? 'N/A',
-          'gifFileName': item['gifFileName'],
+        final List data = json.decode(resp.body);
+        temp.addAll(data.map<Map<String, dynamic>>((e) => {
+          'name': (e['name'] ?? '').toString(),
+          'type': (e['type'] ?? '').toString(),
+          'muscle': (e['muscle'] ?? '').toString(),
+          'equipment': (e['equipment'] ?? '').toString(),
+          'difficulty': (e['difficulty'] ?? '').toString(),
+          'description': (e['description'] ?? '').toString(),
+          'gifFileName': (e['gifFileName'] ?? '').toString(),
           'source': 'db',
         }));
       }
-    } catch (_) {}
-  }
-
-  bool matchesSearchQuery(Map<String, dynamic> e) {
-    final q = searchQuery.toLowerCase();
-    return e.values.any((v) =>
-    v is String && v.toLowerCase().contains(q));
-  }
-
-  void updateSportsSuggestions(String q) {
-    final s = <String>{};
-    if (q.isNotEmpty) {
-      s.addAll(sportsList
-          .where((sport) => sport.toLowerCase().contains(q)));
-      for (var e in allExercises) {
-        if ((e['type'] as String)
-            .toLowerCase()
-            .contains(q)) s.add(e['type']);
-      }
+    } catch (e) {
+      print("Erreur fetch Mongo Atlas/Render: $e");
     }
-    setState(() => sportsSuggestions = s.toList());
+
+    setState(() {
+      _all = temp;
+      _filtered = temp;
+      _loading = false;
+      _selected.clear();
+    });
+  }
+
+  void _applyFilter() {
+    setState(() {
+      _filtered = _all.where((e) {
+        final name = (e['name'] ?? '').toString().toLowerCase();
+        final type = (e['type'] ?? '').toString().toLowerCase();
+        final desc = (e['description'] ?? '').toString().toLowerCase();
+        final muscle = (e['muscle'] ?? '').toString().toLowerCase();
+        final matchSearch =
+            name.contains(_search) ||
+                type.contains(_search) ||
+                desc.contains(_search) ||
+                muscle.contains(_search);
+        final matchSport =
+            _filters.isEmpty ||
+                _filters.any((f) => (e['type'] ?? '').toString().toLowerCase() == f.toLowerCase());
+        return matchSearch && matchSport;
+      }).toList();
+    });
+  }
+
+  void _onSearchChanged(String v) {
+    _search = v.toLowerCase();
+    _applyFilter();
+  }
+
+  void _toggleSport(String sport) {
+    setState(() {
+      if (_filters.contains(sport)) _filters.remove(sport);
+      else _filters.add(sport);
+      _applyFilter();
+    });
+  }
+
+  void _toggleSelected(Map<String, dynamic> ex) {
+    setState(() {
+      if (_selected.contains(ex)) {
+        _selected.remove(ex);
+      } else {
+        _selected.add(ex);
+      }
+    });
   }
 
   void _showSessionSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        builder: (_, ctl) => Container(
-          decoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: EdgeInsets.all(16),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40, height: 4,
+                width: 38, height: 4,
+                margin: EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[700],
-                  borderRadius: BorderRadius.circular(2),
+                  color: Colors.grey[300], borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'Ma séance (${_selected.length})',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Colors.teal[800],
+                  letterSpacing: 0.4,
                 ),
               ),
               SizedBox(height: 12),
-              Text('Ma séance personnalisée',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18, fontWeight: FontWeight.bold,
+              if (_selected.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16, bottom: 18),
+                  child: Text('Aucun exercice sélectionné',
+                      style: TextStyle(color: Colors.grey[500])),
                 ),
-              ),
-              SizedBox(height: 16),
-              Expanded(
-                child: ListView.separated(
-                  controller: ctl,
-                  itemCount: selectedExercises.length,
-                  separatorBuilder: (_, __) => Divider(color: Colors.grey[700]),
-                  itemBuilder: (_, i) {
-                    final ex = selectedExercises[i];
-                    return ListTile(
-                      leading: Icon(Icons.fitness_center,
-                          color: Colors.white),
-                      title: Text(ex['name'],
-                          style: TextStyle(color: Colors.white)),
-                      trailing: IconButton(
-                        icon: Icon(Icons.remove_circle),
-                        color: Colors.redAccent,
-                        onPressed: () {
-                          setState(() {
-                            selectedExercises.remove(ex);
-                          });
-                          Navigator.pop(context);
-                          _showSessionSheet();
-                        },
+              if (_selected.isNotEmpty)
+                ..._selected.map((ex) => Card(
+                  elevation: 2,
+                  margin: EdgeInsets.symmetric(vertical: 7),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    leading: (ex['gifFileName'] ?? '').toString().isNotEmpty
+                        ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        '${ApiConfig.baseUrl}/gifs/${ex['gifFileName']}',
+                        width: 50, height: 50, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.grey),
                       ),
-                    );
-                  },
-                ),
-              ),
+                    )
+                        : Icon(Icons.fitness_center, color: Colors.teal, size: 30),
+                    title: Text(ex['name'], style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(ex['type'], style: TextStyle(color: Colors.grey[700], fontSize: 14)),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => setState(() {
+                        _selected.remove(ex);
+                        Navigator.pop(context);
+                        _showSessionSheet();
+                      }),
+                    ),
+                  ),
+                )),
+              if (_selected.isNotEmpty) SizedBox(height: 6),
               ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
                 icon: Icon(Icons.check),
-                label: Text('Fermer'),
+                label: Text('Fermer', style: TextStyle(fontSize: 15)),
+                onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white70, backgroundColor: Colors.white,
+                  backgroundColor: Colors.teal[700],
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 14, horizontal: 32),
                 ),
-              ),
+              )
             ],
           ),
         ),
@@ -176,159 +216,159 @@ class _WorkoutPageState extends State<WorkoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = allExercises.where(matchesSearchQuery).toList();
-
     return Scaffold(
-      backgroundColor: Colors.white70,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.white!, Colors.grey!],
-            ),
-          ),
-        ),
-        title: Text('Workout',
-            style: TextStyle(
-                fontFamily: 'Bebas Neue',
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2)),
+        title: Text('Workout', style: TextStyle(color: Colors.black, fontSize: 25, fontWeight: FontWeight.bold, letterSpacing: 1)),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.teal[900]),
       ),
-      body: Column(
+      body: _loading
+          ? Center(child: CircularProgressIndicator(color: Colors.teal))
+          : Column(
         children: [
-          // → Barre de recherche stylée
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Material(
-              color: Colors.grey[850],
-              elevation: 4,
-              borderRadius: BorderRadius.circular(30),
-              child: Autocomplete<String>(
-                optionsBuilder: (val) {
-                  updateSportsSuggestions(val.text.toLowerCase());
-                  return sportsSuggestions
-                      .where((s) => s.toLowerCase().contains(val.text));
-                },
-                onSelected: (s) {
-                  setState(() => searchQuery = s.toLowerCase());
-                },
-                fieldViewBuilder: (ctx, ctrl, focus, onSub) {
-                  ctrl.text = searchQuery;
-                  return TextField(
-                    controller: ctrl,
-                    focusNode: focus,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher un exercice ou sport…',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      border: InputBorder.none,
-                      prefixIcon:
-                      Icon(Icons.search, color: Colors.grey[400]),
-                    ),
-                    onChanged: (v) =>
-                        setState(() => searchQuery = v.toLowerCase()),
-                    onSubmitted: (_) => onSub(),
-                  );
-                },
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+            child: TextField(
+              onChanged: _onSearchChanged,
+              style: TextStyle(fontSize: 16),
+              decoration: InputDecoration(
+                hintText: 'Rechercher un exercice ou sport…',
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                prefixIcon: Icon(Icons.search, color: Colors.teal),
+                contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 18),
               ),
             ),
           ),
-          // → Liste des exercices
-          Expanded(
-            child: filtered.isEmpty
-                ? Center(
-              child: Text(
-                'Aucun exercice trouvé',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            )
-                : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: filtered.length,
-              itemBuilder: (ctx, i) {
-                final ex = filtered[i];
-                final sel = selectedExercises.contains(ex);
-                return Card(
-                  color: sel ? Colors.white : Colors.grey[900],
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+          // Filtres par sport/type
+          Container(
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _sportsList.map((sport) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: FilterChip(
+                    label: Text(sport, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    selected: _filters.contains(sport),
+                    onSelected: (_) => _toggleSport(sport),
+                    selectedColor: Colors.teal[100],
+                    backgroundColor: Colors.white,
+                    checkmarkColor: Colors.teal,
+                    labelStyle: TextStyle(
+                        color: _filters.contains(sport)
+                            ? Colors.teal[900]
+                            : Colors.black87
+                    ),
+                    shape: StadiumBorder(
+                        side: BorderSide(color: Colors.teal.shade100)),
                   ),
-                  elevation: 6,
+                )).toList(),
+              ),
+            ),
+          ),
+          SizedBox(height: 6),
+          // Liste des exercices fusionnée
+          Expanded(
+            child: _filtered.isEmpty
+                ? Center(child: Text('Aucun exercice trouvé', style: TextStyle(color: Colors.grey[500])))
+                : ListView.builder(
+              itemCount: _filtered.length,
+              padding: EdgeInsets.only(bottom: 96), // Pour bouton fixe
+              itemBuilder: (_, i) {
+                final ex = _filtered[i];
+                final selected = _selected.contains(ex);
+                return Card(
+                  color: selected ? Colors.teal[50] : Colors.white,
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: selected ? 6 : 2,
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
+                    leading: (ex['gifFileName'] ?? '').toString().isNotEmpty
+                        ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        '${ApiConfig.baseUrl}/gifs/${ex['gifFileName']}',
+                        width: 65, height: 65, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            Icon(Icons.image, color: Colors.grey),
+                      ),
+                    )
+                        : Icon(Icons.fitness_center, color: Colors.teal, size: 38),
                     title: Text(
-                      ex['name'],
+                      ex['name'] ?? '',
                       style: TextStyle(
-                        color: sel ? Colors.black : Colors.white,
                         fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: selected ? Colors.teal[900] : Colors.black87,
                       ),
                     ),
-                    subtitle: Text(
-                      'Type: ${ex['type']}',
-                      style: TextStyle(
-                          color: sel
-                              ? Colors.grey[300]
-                              : Colors.grey[400]),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if ((ex['type'] ?? '').toString().isNotEmpty)
+                          Text("Type: ${ex['type']}", style: TextStyle(fontSize: 13)),
+                        if ((ex['muscle'] ?? '').toString().isNotEmpty)
+                          Text("Muscle: ${ex['muscle']}", style: TextStyle(fontSize: 13)),
+                        if ((ex['description'] ?? '').toString().isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              ex['description'],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                            ),
+                          ),
+                      ],
                     ),
                     trailing: IconButton(
                       icon: Icon(
-                        sel
-                            ? Icons.remove_circle
-                            : Icons.add_circle,
-                        color:
-                        sel ? Colors.redAccent : Colors.grey
+                        selected ? Icons.check_circle : Icons.add_circle_outline,
+                        color: selected ? Colors.teal : Colors.teal[200],
+                        size: 28,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          sel
-                              ? selectedExercises.remove(ex)
-                              : selectedExercises.add(ex);
-                        });
-                      },
+                      onPressed: () => _toggleSelected(ex),
+                      tooltip: selected
+                          ? 'Retirer de ma séance'
+                          : 'Ajouter à ma séance',
                     ),
-                    onTap: () => setState(() {
-                      sel
-                          ? selectedExercises.remove(ex)
-                          : selectedExercises.add(ex);
-                    }),
+                    onTap: () => _toggleSelected(ex),
                   ),
                 );
               },
             ),
           ),
-          // → Bouton de séance
-          if (selectedExercises.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton.icon(
-                onPressed: _showSessionSheet,
-                icon: Icon(Icons.fitness_center),
-                label:
-                Text('Voir la séance (${selectedExercises.length})'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black, backgroundColor: Colors.tealAccent[700],
-                  elevation: 6,
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
         ],
       ),
-      floatingActionButton: selectedExercises.isEmpty
-          ? null
-          : FloatingActionButton(
-        backgroundColor: Colors.tealAccent[700],
-        child: Icon(Icons.check, color: Colors.white70),
-        onPressed: _showSessionSheet,
-      ),
+      bottomNavigationBar: _selected.isNotEmpty
+          ? SafeArea(
+        child: Container(
+          color: Colors.white,
+          padding: EdgeInsets.fromLTRB(24, 6, 24, 16),
+          child: ElevatedButton.icon(
+            icon: Icon(Icons.fitness_center, size: 22),
+            label: Text('Voir ma séance (${_selected.length})', style: TextStyle(fontSize: 17)),
+            onPressed: _showSessionSheet,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal[700],
+              foregroundColor: Colors.white,
+              elevation: 8,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              padding: EdgeInsets.symmetric(vertical: 16),
+            ),
+          ),
+        ),
+      )
+          : null,
     );
   }
 }
