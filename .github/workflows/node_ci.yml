@@ -35,7 +35,7 @@ jobs:
         working-directory: ./backend
 
       - name: Run backend tests
-        run: npx test
+        run: npx jest
         working-directory: ./backend
 
       # Si besoin, tu peux exporter la variable d'env pour la connexion à Mongo :
