@@ -9,7 +9,6 @@ const usersRoutes = require('./routes/users');
 const activitiesRoutes = require('./routes/activities');
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/carts');
-const paymentRoutes = require('./routes/payments');
 const moodsRoutes = require('./routes/moods');
 
 const app = express();
@@ -46,7 +45,6 @@ app.use('/api/users', usersRoutes);
 app.use('/api/activities', activitiesRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
-app.use('/api/payment', paymentRoutes);
 app.use('/api/moods', moodsRoutes);
 
 

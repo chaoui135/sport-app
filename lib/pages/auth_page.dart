@@ -72,7 +72,6 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Workout'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Boutique'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-
           BottomNavigationBarItem(icon: Icon(Icons.music_note), label: 'MoodMusic'),
         ],
         currentIndex: _selectedIndex,
