@@ -4,12 +4,15 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 
+const healthRoute = require('./routes/health');
 const exercisesRoutes = require('./routes/exercises');
 const usersRoutes = require('./routes/users');
 const activitiesRoutes = require('./routes/activities');
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/carts');
 const moodsRoutes = require('./routes/moods');
+
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +43,7 @@ mongoose.connect(process.env.DB_URL || 'mongodb://localhost:27017/sports_exercis
   });
 
 // 📦 Routes
+app.use('/health', healthRoute);
 app.use('/api/exercises', exercisesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/activities', activitiesRoutes);
