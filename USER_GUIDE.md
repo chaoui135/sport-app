@@ -1,4 +1,4 @@
-# 📱 UTILISATION.md — FitVista
+# 📱 USER_GUIDE.md — FitVista
 
 ## 🎯 Objectif
 Ce manuel explique comment utiliser l'application **FitVista**, que ce soit en local sur un émulateur Android ou après déploiement.
@@ -65,7 +65,7 @@ Le fichier `api_config.dart` (dans `lib/services/`) utilise ces variables pour b
 ## ✅ Données de test
 
 - Des jeux de données fictifs sont insérés dans MongoDB (test ou prod)
-- Tu peux aussi interagir via Postman :
+- On peut aussi interagir via Postman :
     - `GET /api/users`
     - `POST /api/auth`
     - `GET /api/moods`, `POST /api/moods`
