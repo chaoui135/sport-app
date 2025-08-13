@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/user');
+const { isStrongPassword } = require('../utils/validators');
 
 const router = express.Router();
 
@@ -15,6 +16,13 @@ router.post('/register', async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: 'Nom d\'utilisateur déjà utilisé' });
     }
+
+     if (!isStrongPassword(password)) {
+          return res.status(400).json({
+            message:
+              "Mot de passe trop faible. Exigences : min 8 caractères, dont majuscule, minuscule, chiffre et caractère spécial."
+          });
+        }
 
     const newUser = new User({
       userId: uuidv4(),
