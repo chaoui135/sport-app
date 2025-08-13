@@ -18,12 +18,13 @@
 ---
 
 ## [1.0.1] – 2025-06-23
-🐞 **Correctif critique – Inscription utilisateur**
+🐞 **Correctif critique pour mot de passe faible**
 
-- Problème : erreur 500 lors de l’inscription avec un `userName` déjà existant
-- Cause : absence de vérification d’unicité dans MongoDB
-- Solution : ajout d’un bloc `findOne()` + réponse 400 avec message clair
-- Bloc encapsulé dans un `try/catch` sécurisé pour éviter tout plantage serveur
+- Problème : L'API `POST /api/users/register` acceptait des mots de passe trop simples, exposant les comptes à des attaques par force brute ou credential stuffing.
+- Solution : Ajout d'une politique de complexité stricte pour les mots de passe. Désormais, un mot de passe doit contenir au minimum 8 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial.
+- Impact : L'API retourne une erreur 400 avec un message explicite si le mot de passe est jugé trop faible.
+- Ajout d'un utilitaire de validation**
+    - La logique de validation a été isolée dans un nouveau module `backend/utils/validator.js` pour être réutilisable et testable de manière unitaire.
 
 ---
 

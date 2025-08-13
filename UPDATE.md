@@ -1,10 +1,20 @@
 # 🛠 UPDATE.md — Manuel de mise à jour de FitVista
 
-## 📅 Objectif
+## 🎯  Objectif
 
 Ce manuel explique comment mettre à jour les différents composants du projet **FitVista**, incluant le frontend Flutter, le backend Node.js ainsi que les dépendances, les fichiers d’environnement et les données.
 
 ---
+
+## 🗓️ Calendrier de vérification (rythme conseillé)
+
+| Fréquence | Actions | Commandes / Outils |
+|---|---|---|
+| À chaque push / PR | CI (lint + tests + build) | GitHub Actions (`npm test`, `dart analyze`, build) |
+| Hebdomadaire | Mises à jour mineures/patch + audit sécu | `npm outdated && npm update`, `npm audit`, `flutter pub upgrade` |
+| Mensuelle | Release + tag + mise à jour du changelog | `git tag vX.Y.Z`, `git push --tags`, `CHANGELOG.md` |
+| Continu | Supervision de la prod | UptimeRobot sur `/health`, logs Render |
+
 
 ## 🔧 MISE À JOUR DU FRONTEND (Flutter)
 
