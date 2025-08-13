@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/user');
-const { isStrongPassword } = require('../utils/validators');
+const { isStrongPassword } = require('../utils/validator');
 
 const router = express.Router();
 
