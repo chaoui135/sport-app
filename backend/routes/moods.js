@@ -1,3 +1,5 @@
+
+
 const express = require('express');
 const router = express.Router();
 const Mood = require('../models/mood');
@@ -38,10 +40,3 @@ router.get('/', async (req, res, next) => {
 });
 
 module.exports = router;
-server.js – middleware d’erreurs (à ajouter tout en bas, après les routes)
-
-// Middleware d'erreurs JSON
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ message: 'Erreur serveur' });
-});
