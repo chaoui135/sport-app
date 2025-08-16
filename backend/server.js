@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const morgan = require('morgan')
 require('dotenv').config();
 
 const healthRoute = require('./routes/health');
@@ -26,6 +27,8 @@ app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   next();
 });
+
+app.use(morgan('dev'))
 
 // ✅ Route de health check pour Render
 app.get('/', (req, res) => {
