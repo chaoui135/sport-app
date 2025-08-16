@@ -6,7 +6,7 @@ Ce manuel explique comment mettre à jour les différents composants du projet *
 
 ---
 
-## 🗓️ Calendrier de vérification (rythme conseillé)
+## 🗓️ Calendrier de vérification 
 
 | Fréquence | Actions | Commandes / Outils |
 |---|---|---|
@@ -55,7 +55,8 @@ npm install <package>@latest
 3. **Tester le backend**
 
 ```bash
-npm run dev
+node server
+
 ```
 
 ---
@@ -72,7 +73,7 @@ npm run dev
 flutter build apk
 ```
 
-3. **Redéployer le backend sur Render (ou hébergeur choisi)**
+3. **Redéployer le backend sur Render**
 
     * Commit + push vers GitHub si déploiement continu configuré
 
