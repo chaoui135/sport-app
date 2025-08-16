@@ -16,6 +16,29 @@
 - 🔒 Sécurisation des routes API avec JWT
 
 ---
+## [1.0.3] – 2025-08-16
+🐞 **Correctif – Route `POST /api/moods` (500 → 400 / 201)**
+
+- **Problème** : la route renvoyait `500` quand le corps était invalide ou quand `user` était une chaîne non castable en ObjectId.
+- **Causes** :
+  - Pas de validation des champs requis (`mood`, `userId`).
+  - Cast direct d’une chaîne vers `ObjectId` (erreur Mongoose).
+- **Solution** :
+  - Validation d’entrée : `400` si champs manquants, `404` si `userId` inconnu.
+  - Mapping **`userId` (UUID)** → `_id` Mongo via `User.findOne({ userId })`.
+  - Création de l’entrée avec `{ mood, user: user._id }` et **`201`** sur succès.
+- **Tests** :
+  - Ajout de tests d’intégration avec **MongoMemoryServer** : cas `400`, `404`, `201`.
+  - Fichier : `backend/__tests__/moodRoute.test.js`.
+- **Observabilité** :
+  - Logs Render propres (plus de stack 500).
+  - UptimeRobot sur `/health` : statut OK.
+- **Docs** :
+  - Mise à jour de ce changelog.
+  - Référence PR : _fix/moods-validate-body_.
+
+---
+
 
 ## [1.0.1] – 2025-06-23
 🐞 **Correctif critique pour mot de passe faible**
