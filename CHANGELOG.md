@@ -48,30 +48,35 @@ Voici une version réécrite et **ordonnée chronologiquement** du changelog de 
 
 ---
 
-## \[1.0.3] – 2025-08-16
+## [1.0.3] – 2025-08-16
 
 🐞 **Correctif – Route `POST /api/moods`**
 
-* Problème : Renvoi d’erreur `500` si corps invalide ou `user` incorrect
-* Résolution :
+* **Problème** : Erreurs **500** si corps invalide (erreurs Mongoose non gérées)
+* **Résolution** :
+  - Validation stricte :
+    - **400** si `mood` manquant / non-string ou hors liste
+      `['Heureux','Triste','Stressé','Calme','Neutre']`
+    - **400** si `user` manquant ou **`ObjectId` MongoDB invalide**
+  - **Mapping** des erreurs Mongoose (**ValidationError / CastError**) → **400**  
+    (autres erreurs déléguées au **middleware d’erreurs JSON** global)
+  - `GET /api/moods` trié par **`createdAt: -1`** (timestamps activés sur le modèle)
 
-  * Validation stricte : `400` si champs absents, `404` si `userId` inconnu
-  * Mapping `userId` (UUID) → `_id` Mongo via `User.findOne()`
-  * Réponse `201` avec `{ mood, user: user._id }` sur succès
-* 🔬 Tests :
+🔬 **Tests**
+- Intégration (MongoMemoryServer) :
+  - `{}` → **400**
+  - `user` manquant → **400**
+  - `user` non-ObjectId → **400**
+  - `mood` hors liste → **400**
+  - cas valide (`mood` autorisé + `user` ObjectId) → **201**
+- Fichier : `backend/__tests__/moodRoute.test.js`
 
-  * Intégration avec MongoMemoryServer (cas 400, 404, 201)
-  * Fichier : `backend/__tests__/moodRoute.test.js`
-* 👁 Observabilité :
-
-  * Logs Render plus clairs (plus de stack trace 500)
-  * `/health` sous monitoring → statut OK
-* 📘 Documentation :
-
-  * Changelog mis à jour
-  * PR associée : *fix/moods-validate-body*
+👁 **Observabilité**
+- Logs Render : les POST passent de **500** à **400/201** (plus de stack trace non gérée)
+- `/health` monitoré par UptimeRobot : **OK** après déploiement
 
 ---
+
 
 ## \[1.1.1] – 2025-10-15
 

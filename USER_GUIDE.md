@@ -55,7 +55,7 @@ Le fichier `api_config.dart` (dans `lib/services/`) utilise ces variables pour b
 | Authentification        | Création, connexion, déconnexion avec JWT                               |
 | Objectifs personnalisés | Choix d’un objectif + génération de plan                                |
 | Suivi nutritionnel      | Accès à des conseils et pages de nutrition                              |
-| Suivi de l’humeur       | Ajout d’une humeur quotidienne et historique                            |
+| Suivi de l’humeur       | Ajout d’une humeur quotidienne et historique avec musisque associée     |
 | Club de sport           | Recherche de clubs disponibles                                          |
 | Boutique                | Ajout d’équipements/produits dans un panier                             |
 | Sélection de sport      | Accéder à des exercices techniques adaptés et personnaliser ses séances |
