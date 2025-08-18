@@ -19,14 +19,29 @@ afterAll(async () => {
   await mongoServer.stop();
 });
 
-test('POST /api/moods with empty body -> 400', async () => {
-  const res = await request(app).post('/api/moods').send({});
-  expect(res.statusCode).toBe(400);
-  expect(res.body).toHaveProperty('message');
+test('POST /api/moods user manquant -> 400', async () => {
+  const r = await request(app).post('/api/moods').send({ mood: 'Calme' });
+  expect(r.status).toBe(400);
 });
 
-test('POST /api/moods with valid body -> 201', async () => {
-  const res = await request(app).post('/api/moods').send({ mood: 'Calme', user: '68542272a057a62686eea3b1' });
-  expect(res.statusCode).toBe(201);
-  expect(res.body).toHaveProperty('_id');
+test('POST /api/moods user ObjectId invalide -> 400', async () => {
+  const r = await request(app).post('/api/moods').send({ mood: 'Calme', user: 'not-an-id' });
+  expect(r.status).toBe(400);
+});
+
+test('POST /api/moods mood hors liste -> 400', async () => {
+  const r = await request(app).post('/api/moods').send({
+    mood: 'Fâché',
+    user: new mongoose.Types.ObjectId().toString()
+  });
+  expect(r.status).toBe(400);
+});
+
+test('POST /api/moods valide -> 201', async () => {
+  const r = await request(app).post('/api/moods').send({
+    mood: 'Calme',
+    user: new mongoose.Types.ObjectId().toString()
+  });
+  expect(r.status).toBe(201);
+  expect(r.body).toHaveProperty('_id');
 });
