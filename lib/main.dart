@@ -131,7 +131,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.fastfood), label: 'Nutrition'),
           BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'Progression'),
           BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Workout'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Boutique'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shop'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
           BottomNavigationBarItem(icon: Icon(Icons.sentiment_satisfied_alt), label: 'MoodMusic'),
         ],

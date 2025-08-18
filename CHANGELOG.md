@@ -13,7 +13,8 @@ Voici une version réécrite et **ordonnée chronologiquement** du changelog de 
 ### Fonctionnalités initiales :
 
 * 🔐 Authentification (inscription / connexion)
-* 💪 Génération automatique de programmes sportifs selon les objectifs
+* 💪 Choix d’un objectif personnalisé + génération de plan
+* 💪 Sélection de sport + Accès à des exercices techniques adaptés + personnaliser ses séances en combinant différents exercices selon ses objectifs.  
 * 🧠 Journal d’humeur avec historique + citations motivantes aléatoires
 * 🥗 Consultation de recettes nutritionnelles
 * 📍 Carte interactive des clubs de sport à proximité

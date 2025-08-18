@@ -50,24 +50,26 @@ Le fichier `api_config.dart` (dans `lib/services/`) utilise ces variables pour b
 
 ## 🧩 Fonctionnalités principales
 
-| Fonction                | Description                                                               |
-|-------------------------|---------------------------------------------------------------------------|
-| Authentification        | Création, connexion, déconnexion avec JWT                                 |
-| Objectifs personnalisés | Choix d’un objectif + génération de plan                                  |
-| Suivi nutritionnel      | Accès à des conseils et pages de nutrition                                |
-| Suivi de l’humeur       | Ajout d’une humeur quotidienne et historique                              |
-| Club de sport           | Recherche de clubs disponibles  |
-| Boutique                | Ajout d’équipements/produits dans un panier                               |
-                      
+| Fonction                | Description                                                             |
+|-------------------------|-------------------------------------------------------------------------|
+| Authentification        | Création, connexion, déconnexion avec JWT                               |
+| Objectifs personnalisés | Choix d’un objectif + génération de plan                                |
+| Suivi nutritionnel      | Accès à des conseils et pages de nutrition                              |
+| Suivi de l’humeur       | Ajout d’une humeur quotidienne et historique                            |
+| Club de sport           | Recherche de clubs disponibles                                          |
+| Boutique                | Ajout d’équipements/produits dans un panier                             |
+| Sélection de sport      | Accéder à des exercices techniques adaptés et personnaliser ses séances |
+|                         | en combinant différents exercices selon ses objectifs.                  |   
+          
 
 ---
 
 ## ✅ Données de test
 
 - Des jeux de données fictifs sont insérés dans MongoDB (test ou prod)
-- On peut aussi interagir via Postman :
-    - `GET /api/users`
-    - `POST /api/auth`
+- On peut aussi interagir via Insomnia :
+    - `GET /api/products`
+    - `GET /api/exercises`
     - `GET /api/moods`, `POST /api/moods`
 
 ---
