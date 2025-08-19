@@ -1,4 +1,4 @@
-// routes/activities.js
+
 const express = require('express');
 const Activity = require('../models/activity');
 const router = express.Router();

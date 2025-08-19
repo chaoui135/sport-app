@@ -97,7 +97,7 @@ flutter run
 
 ```bash
 cd backend
-npm test
+npx jest
 ```
 
 ---

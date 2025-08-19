@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const Product = require('../models/product'); // adapte si le chemin est différent
+const Product = require('../models/product');
 
 let mongoServer;
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   await mongoose.connect(mongoServer.getUri());
-}, 20000); // allonge le timeout
+}, 20000);
 
 afterAll(async () => {
   await mongoose.disconnect();

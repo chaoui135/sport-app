@@ -14,11 +14,11 @@ describe('calculIMC', () => {
 
 describe('calculBMR', () => {
   it('calcule le BMR pour un homme', () => {
-    expect(calculBMR(70, 170, 25, true)).toBeCloseTo(1642.5, 1); // <-- change ici
+    expect(calculBMR(70, 170, 25, true)).toBeCloseTo(1642.5, 1);
   });
 
   it('calcule le BMR pour une femme', () => {
-    expect(calculBMR(70, 170, 25, false)).toBeCloseTo(1476.5, 1); // <-- change ici
+    expect(calculBMR(70, 170, 25, false)).toBeCloseTo(1476.5, 1);
   });
 
   it('lance une erreur si un paramètre manque', () => {

@@ -42,6 +42,3 @@ jobs:
         run: npx jest
         working-directory: ./backend
 
-      # Si besoin, tu peux exporter la variable d'env pour la connexion à Mongo :
-      # - name: Set env var (si utilisé dans ton code/test)
-      #   run: echo "MONGO_URL=mongodb://localhost:27017/test" >> $GITHUB_ENV

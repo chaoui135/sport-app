@@ -1,4 +1,4 @@
-// __tests__/spoonacularService.test.js
+
 const { fetchRecipes, fetchRecipeDetails } = require('../utils/spoonacularService');
 
 // Simule la fonction 'fetch' globale
