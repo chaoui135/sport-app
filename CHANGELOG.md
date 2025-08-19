@@ -77,6 +77,16 @@ Voici une version réécrite et **ordonnée chronologiquement** du changelog de 
 
 ---
 
+## [1.0.4] – 2025-08-19
+
+🧪 **Ajout de tests unitaires Flutter**
+
+
+✅ Ajout de tests unitaires Flutter :
+- `MoodMusicPage` : vérifie présence des boutons `ChoiceChip`
+- `BoutiquePage` : présence du champ de recherche
+- 📁 Fichiers : `test/mood_music_test.dart`, `test/boutique_page_test.dart`
+
 
 ## [Unreleased]
 
