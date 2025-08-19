@@ -1,5 +1,3 @@
-Voici une version réécrite et **ordonnée chronologiquement** du changelog de **FitVista**, avec des formulations plus claires et une cohérence stylistique :
-
 ---
 
 # 🗂️ CHANGELOG – FitVista
