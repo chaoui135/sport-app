@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../services/api_config.dart'; // adapte le chemin si besoin
+import '../services/api_config.dart';
 
 class MoodMusicPage extends StatefulWidget {
   const MoodMusicPage({super.key});
