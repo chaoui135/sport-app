@@ -78,13 +78,13 @@ Voici une version réécrite et **ordonnée chronologiquement** du changelog de 
 ---
 
 
-## \[1.1.1] – 2025-10-15
+## [Unreleased]
 
-🔧 **Améliorations de performances & nettoyage**
+### Changed
+- 📱 Lazy loading des images (perf)
+- 🎯 Temps d’accès API visé ~1.4s
+- 🧹 Suppression routes obsolètes
 
-* 📱 Lazy loading des images pour accélérer les chargements
-* 🎯 Temps moyen d’accès API réduit (2.2s → 1.4s)
-* 📁 Suppression des routes backend obsolètes
 
 ---
 
