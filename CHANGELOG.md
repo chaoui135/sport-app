@@ -87,6 +87,15 @@ Voici une version réécrite et **ordonnée chronologiquement** du changelog de 
 - `BoutiquePage` : présence du champ de recherche
 - 📁 Fichiers : `test/mood_music_test.dart`, `test/boutique_page_test.dart`
 
+### 🧪 Observabilité côté Flutter
+
+* Les tests front sont lancés via `flutter test --reporter expanded`,  
+  permettant de **visualiser les noms des tests exécutés et leurs résultats**.
+* Affichage des statuts : ✅ **passé**, ❌ **échec**, avec description claire.
+* Exemples :
+  - `MoodMusicPage affiche la question principale` → ✅
+  - `BoutiquePage contient un champ de recherche` → ✅
+
 
 ## [Unreleased]
 
