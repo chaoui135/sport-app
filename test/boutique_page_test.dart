@@ -7,7 +7,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    await dotenv.load(fileName: ".env"); // OU ".env" si tu n’as pas de fichier test
+    await dotenv.load(fileName: ".env"); 
   });
 
   testWidgets('BoutiquePage contient un champ de recherche', (WidgetTester tester) async {
