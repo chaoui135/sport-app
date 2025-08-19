@@ -40,7 +40,7 @@ Ce document décrit les étapes nécessaires pour installer, configurer, tester 
 
 ```bash
 git clone https://github.com/chaoui135/sport-app.git
-cd fitvista
+cd sport-app
 ```
 
 ### 2. Configurer le backend
